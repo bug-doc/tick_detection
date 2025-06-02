@@ -1,0 +1,340 @@
+---
+title: "Tick detection simulation"
+author: "JP Owen, DS Marshall"
+format: html
+editor: visual
+date: 3 May 2025
+---
+
+## Goal
+
+Develop a simulation of tick detection (number trapped) that combines tick abundance (product of mortality over time) and distance moved, relative to past temperature (carryover effect). The core of the simulation is binomial probability (rbinom) where the sample size is the number of ticks present and the probability is a function of movement. The premise for the probability value is that a tick is more likely to be detected (trapped) the farther it moves. **This requires converting distance moved to a probability of detection**. Tick survival and movement are both affected by past temperature (carryover effect). Thus, there are three parameters for the model:
+
+1.  Tick abundance (# alive at time x)
+
+2.  Probability of detection (function of how far a tick moves at time x)
+
+3.  Carryover effect (past temperature that influences survival and movement)
+
+## Libraries
+
+```{r, eval = FALSE}
+
+library(ggplot2)
+library(stats)
+library(dplyr)
+```
+
+## Simulate distances moved by warm and cold exposed ticks.
+
+The lab experiments have shown distances moved by individual ticks from different past temperatures. Again, the premise is that a tick is more likely to be detected (trapped) the more it moves. We expect that distance moved relates to probability of detection with a saturating function. The farther a ticks moves, the probability of detection approaches 1.
+
+We approximated the distances moved, based on the observd distanced moved in laboratory experiments. The basic structure is as follows:
+
+distance moved = a + b1 \* d
+
+where,
+
+a = distance moved at day zero
+
+b = slope of change in distance moved over time (day)
+
+d = day
+
+From the experimental data:
+
+-   Linear equation of distance moved by warm treatment ticks over time -\> y=150-3.4x
+
+-   Linear equation of distance moved by cold treatment ticks over time -\> y=92-0.92x
+
+```{r}
+
+# Distances moved (m) as a function of treatment [warm (m_w) or cool (m_c)] and day (d)
+
+n <- 100 
+# Arbitrary selection of 350 data points
+
+a <- rpois(n, lambda = 100) 
+# Using a poisson distribution to select random starting distance values. These are distances moved at day 0. 
+
+
+d <- runif(n=100,0,35) 
+# This generates 350 random time values (day) between 0 and 35.
+
+b <- rnorm(n=100, mean = -3.0, sd=0.4) 
+# This is the slope for distance moved over time (day). Note that we are using rnorm to select a range of slope values, since any slope would likely change with repeated measures. This slope is only used in the warm equation below, the slope of cold ticks is 0. We adjusted this under the assumption that the experimental values we observed were extreme. 
+
+a_w <- numeric() 
+# This makes a matrix of distances moved by warm treatment ticks.
+
+a_w<-rnorm(n=100, mean=150,sd=40) 
+# 350 warm ticks moving a mean of 150 meters with a standard deviation of 40 m.
+
+
+m_w<- a_w + b*d 
+# Note that we multiply "a" by 1.5 to create a 50% increase in movement at day 0. I did this because our observed data showed that warm treatment ticks moved ~50% farther than cool treatment ticks on day 0. 
+
+m_w<-pmax(m_w, 0) 
+# prevents negative distance
+
+
+plot(d, m_w,
+     xlab = "Time (days)",
+     ylab = "Distance (meters)",
+     main = "Warm tick movement over time") 
+# Here is a plot of the simulated distances moved by ticks over time (day) in the warm treatment group. Distances in this group decline over time. 
+
+m_c <- numeric() 
+# Matrix for distances moved by cool treatment ticks
+
+
+m_c<-rnorm(n=100, mean=100, sd=40) 
+# 350 cold ticks moving a mean of 100 m with a standard deviation of 40 m.
+
+
+m_c<-pmax(m_c, 0) 
+# prevents negative distance
+
+
+# Creating a data frame for use below.
+mw <- m_w
+mwWarm <- data.frame(mw)
+mwWarm$d <- d
+mwWarm$prev <-  1
+
+mc <- m_c
+mcCold <- data.frame(mc)
+mcCold$d <- d
+mcCold$prev <- 2
+
+colnames(mcCold) <- colnames(mwWarm)
+
+movement <- rbind(mcCold, mwWarm); head(movement)
+```
+
+## Convert distances moved into probabilities of detection.
+
+Here is the code we used to convert distances into probabilities. The probability of detection should increase with the distance traveled by ticks. The maximum probability of detection should be 30% based on Marshall et al. (2025).
+
+```{r}
+
+p_w <- m_w/(185+m_w); mean(p_w)
+# Converts distance moved to a probability of detection for warm ticks (p_w). The denomenator is used to set the maximum probability at around 30%. 
+
+
+p_c <- m_c/(210+m_c); mean(p_c)
+# Converts distance moved to a probability of detection for cool treatment ticks (p_c). 
+
+
+plot(m_c, p_c,     
+     xlab = "Distance (meters)",
+     ylab = "Probability of detection",
+     main = "Probability of detecting cold ticks by distance moved") 
+# Plot confirming that probability of detection increases with distance moved.
+
+
+# Creating probability data frame for use below.
+pw <- p_w
+pwWarm <- data.frame(pw)
+pwWarm$d <- d
+pwWarm$prev <-  1
+pwWarm$m <- m_w
+
+pc <- p_c
+pcCold <- data.frame(pc)
+pcCold$d <- d
+pcCold$prev <- 2
+pcCold$m <- m_c
+
+colnames(pcCold) <- colnames(pwWarm)
+
+probability <- rbind(pcCold, pwWarm); head(probability)
+
+probability$prev <- factor(probability$prev, 
+                           levels = c(1, 2),
+                           labels = c("Warm", "Cold"))
+
+
+# filtering warm and cold treatments
+wp_filtered <- probability %>% filter(prev == "Warm")
+cp_filtered <- probability %>% filter(prev == "Cold")
+
+# warm saturation plot
+ggplot(data=wp_filtered, aes(x = m, y = pw)) +
+  geom_point(size = 2.1, alpha = 0.8, color = "black")+
+  scale_shape_manual(values = c(16, 1)) + 
+  xlab("Distance (m)") +
+  ylab("Probability of detection") +
+  ggtitle("Warm tick detection by distance moved") +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    legend.text = element_text(size = 16),
+    legend.title = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.text.x = element_text(size = 20),
+    axis.text.y = element_text(size = 20),
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    plot.title = element_text(size = 22, hjust = 0.5))
+
+# cold saturation plot
+ggplot(data=cp_filtered, aes(x = m, y = pw)) +
+  geom_point(size = 2.1, alpha = 0.8, color = "black")+
+  scale_shape_manual(values = c(16, 1)) + 
+  xlab("Distance (m)") +
+  ylab("Probability of detection") +
+  ggtitle("Cold tick detection by distance moved") +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    legend.text = element_text(size = 16),
+    legend.title = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.text.x = element_text(size = 20),
+    axis.text.y = element_text(size = 20),
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    plot.title = element_text(size = 22, hjust = 0.5))
+```
+
+## Simulate tick abundance values taking into account mortality over time.
+
+That lab experiments demonstrated that the mortality rates of ticks depend on past temperature (carryover). Here, we need to simulate numbers of ticks alive over time for ticks with warm vs cool carryover effects.
+
+I calculated slopes for mortality of warm history ticks using a linear regression fit to the survival plot. Cool history tick survival was nonlinear and best fit using a sigmoidal approximation.
+
+Linear model for warm ticks:
+
+number of ticks = a + b\*d
+
+where,
+
+a = starting number of ticks alive (day 0)
+
+b = slope of change in number alive over time (day). "Mortality rate"
+
+d = day
+
+Nonlinear model for cold ticks:
+
+number of ticks = a/(1 + exp(-(d-b)/c))
+
+where,
+
+a = starting number on day 0
+
+b = day of steepest mortality rate (inflection point)
+
+c = slope
+
+d = day
+
+```{r}
+
+
+n <- 100
+bw <- rnorm(n=100, mean = -2.6, sd=0.3) 
+# This is the slope for mortality with warm temp based on laboratory survival experiments
+
+a <- rpois(n, lambda = 100) 
+# starting number of ticks
+
+a_w <- ceiling(a + bw*d) 
+# Abundance with warm treatment. Use ceiling to round to whole number.
+
+a_w <- pmax(a_w, 0) 
+# This makes all negative values zero. You can't have abundance below zero! 
+
+ab <- a_w
+abWarm <- data.frame(ab)
+abWarm$d <- d
+abWarm$prev <- 1 
+# assign "1" to warm ticks
+# creating a warm abundance data frame
+
+plot(d,a_w,
+     xlab = "Time (days)",
+     ylab = "Number of ticks",
+     main = "Warm tick abundance over time") 
+# Plot confirms that warm tick abundance declines over time.
+
+
+
+x<-seq(0, 35, length.out=100)
+
+a_value <- rnorm(length(x), mean=95, sd=4) 
+# starting number of cold ticks
+
+b_value <- rnorm(length(x), mean = 24, sd = 1) 
+# inflection point for cold abundance
+
+c_value <- rnorm(length(x), mean = -4, sd = 0.3) 
+# slope of abundance curve
+
+
+sigmoid <- function(x, a, b, c) {a / (1 + exp(-(x-b)/c))}
+# non-linear abundance function
+
+y_true <- mapply(sigmoid, x=d, a=a_value, b=b_value, c=c_value) 
+# simulating cold tick abundance
+
+a_c <- y_true + rnorm(length(x),mean=0, sd=5) 
+# adding variability in cold abundance 
+
+abund_c <- a_c
+# assigning "noisy" abundance data 
+
+abund_c <- round(a_c)
+# rounding so we are dealing with whole ticks
+
+abund_c[abund_c<0]<-0
+# making sure we can't simulate negative ticks
+
+sigmoid_data<-data.frame(d=d,ab=abund_c)
+# putting cold abundance into a data frame
+
+sigmoid_data$prev <- 2
+# assign "2" to cold ticks
+
+ggplot(sigmoid_data, aes(x=d, y=a_c)) +
+  geom_jitter(width=0.4, height=1.5, size=1.8, color="black", alpha=0.8)
+# abundance of cold ticks declines over time
+
+
+
+abAll <- rbind(sigmoid_data, abWarm)
+# combining cold and warm abundances into a single data set
+```
+
+## Simulate tick detection over time.
+
+This uses rbinom to calculate ticks that would be trapped based on abundance (a_w, and abund_c) and probability of detection (p_x) that were both determined above. The function uses abundance values for sample size and p_x values for probability.
+
+```{r}
+
+rep <- 100
+
+# creating detection objects from abundance and probability simulations
+det_w <- rbinom(n = rep, size = a_w, prob = p_w)
+det_c <- rbinom(n = rep, size = abund_c, prob = p_c)
+
+# preparing cold and warm detection data frames for merging into a single data frame
+det <- det_c
+cool_df <- data.frame(det)
+cool_df$d <- d
+cool_df$prev <- 2 # This codes the cool treatment group at 2
+cool_df$prev <- as.character(cool_df$prev)
+
+det <- det_w
+warm_df <- data.frame(det)
+warm_df$d <- d
+warm_df$prev <- 1 # This codes the cool treatment group at 1
+warm_df$prev <- as.character(warm_df$prev)
+
+# grouping detection from both groups
+dataAll <- rbind(cool_df, warm_df)
+
+```
