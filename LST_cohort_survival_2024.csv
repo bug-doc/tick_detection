@@ -1,0 +1,61 @@
+date,time,treatment,treat,treatment2,sex,status
+1/13/24,4,warm,1,warm,male,1
+1/13/24,4,warm,1,warm,female,1
+1/13/24,4,warm,1,warm pilot,male,1
+1/21/24,12,warm,1,warm pilot,male,1
+1/21/24,12,warm,1,warm pilot,female,1
+1/21/24,12,warm,1,warm,female,1
+1/21/24,12,warm,1,warm,female,1
+1/21/24,12,warm,1,warm,male,1
+1/21/24,12,warm,1,warm,male,1
+1/21/24,12,warm,1,warm,female,1
+1/21/24,12,warm,1,warm,male,1
+1/21/24,12,warm,1,warm,female,1
+1/23/24,14,warm,1,warm,male,1
+1/23/24,14,warm,1,warm pilot,female,1
+1/23/24,14,warm,1,warm,female,1
+1/27/24,18,warm,1,warm pilot,female,1
+1/27/24,18,warm,1,warm,female,1
+1/27/24,18,warm,1,warm pilot,female,1
+1/27/24,18,warm,1,warm,female,1
+1/29/24,20,warm,1,warm pilot,male,1
+1/31/24,22,warm,1,warm,male,1
+1/31/24,22,warm,1,warm pilot,female,1
+1/31/24,22,warm,1,warm,female,1
+2/2/24,24,warm,1,warm,male,1
+2/2/24,24,warm,1,warm pilot,male,1
+2/2/24,24,warm,1,warm,female,1
+2/2/24,24,warm,1,warm,male,1
+2/4/24,26,warm,1,warm,male,1
+2/4/24,26,warm,1,warm,male,1
+2/12/24,34,warm,1,warm pilot,male,1
+1/21/24,12,cold,2,cold pilot,female,1
+1/21/24,12,cold,2,cold pilot,female,1
+1/21/24,12,cold,2,cold,female,1
+1/23/24,14,cold,2,cold,female,1
+1/23/24,14,cold,2,cold,female,1
+1/25/24,16,cold,2,cold,female,1
+1/27/24,18,cold,2,cold,female,1
+1/27/24,18,cold,2,cold,female,1
+1/27/24,18,cold,2,cold,female,1
+1/27/24,18,cold,2,cold,female,1
+1/29/24,20,cold,2,cold pilot,male,1
+1/29/24,20,cold,2,cold pilot,male,1
+1/29/24,20,cold,2,cold,female,1
+1/31/24,22,cold,2,cold pilot,female,1
+1/31/24,22,cold,2,cold,male,1
+1/31/24,22,cold,2,cold,male,1
+1/31/24,22,cold,2,cold,male,1
+2/2/24,24,cold,2,cold,female,1
+2/2/24,24,cold,2,cold,female,1
+2/2/24,24,cold,2,cold,male,1
+2/4/24,26,cold,2,cold,male,1
+2/4/24,26,cold,2,cold pilot,female,1
+2/4/24,26,cold,2,cold,male,1
+2/6/24,28,cold,2,cold pilot,male,1
+2/8/24,30,cold,2,cold,male,1
+2/8/24,30,cold,2,cold pilot,male,1
+2/8/24,30,cold,2,cold pilot,male,1
+2/12/24,34,cold,2,cold,male,1
+2/12/24,34,cold,2,cold,male,1
+2/14/24,36,cold,2,cold,male,1
